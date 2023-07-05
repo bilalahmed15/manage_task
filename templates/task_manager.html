@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2fa;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #673ab7;
+            text-align: center;
+        }
+        form {
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        form label {
+            display: block;
+            margin-bottom: 10px;
+            color: #673ab7;
+        }
+        form select,
+        form input[type="date"],
+        form input[type="checkbox"],
+        form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+        }
+        form textarea {
+            height: 100px;
+        }
+        form button {
+            background-color: #673ab7;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .completed-task {
+            background-color: green;
+        }
+        .overdue-task {
+            background-color: red;
+        }
+        .pending-task {
+            background-color: yellow;
+        }
+        /* Add CSS for the modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            border-radius: 20px;
+        }
+        /* Style the buttons */
+        button {
+            background-color: #673ab7;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        /* Style the links */
+        a {
+            display: inline-block;
+            background-color: #673ab7;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+        /* Style the close button in the modal */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Manager</h1>
+    
+
+    <h2>Filter Tasks</h2>
+    <form method="GET" action="{{ url_for('task_manager') }}">
+        <label for="filter_name">Filter by Name:</label>
+        <select name="filter_name" id="filter_name">
+            <option value="">All</option>
+            {% for name in names %}
+            <option value="{{ name }}" {% if filter_name == name %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="filter_status">Filter by Status:</label>
+        <select name="filter_status" id="filter_status">
+            <option value="">All</option>
+            {% for status in statuses %}
+            <option value="{{ status }}" {% if filter_status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="filter_deadline">Filter by Deadline:</label>
+        <input type="checkbox" name="filter_deadline_all" id="filter_deadline_all" {% if filter_deadline_all %}checked{% endif %}>
+        <label for="filter_deadline_all">All Dates</label>
+        
+        <input type="date" name="filter_deadline" id="filter_deadline" {% if filter_deadline_all %}disabled{% endif %} {% if not filter_deadline_all %}value="{{ filter_deadline }}"{% endif %}>
+
+        <input type="submit" value="Apply Filter">
+    </form>
+
+    <h2>Tasks</h2>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Deadline</th>
+            <th>Description</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Department</th>
+            <th>Repetition</th>
+            <th>Actions</th>
+        </tr>
+        {% for task in tasks %}
+        <tr class="{% if task.status == 'Complete' %}completed-task{% elif task.status == 'Overdue' %}overdue-task{% elif task.status == 'Pending' %}pending-task{% endif %}">
+            <td>{{ task.name }}</td>
+            <td>{{ task.deadline }}</td>
+            <td>{{ task.description }}</td>
+            <td>{{ task.priority }}</td>
+            <td>
+                <form method="POST" action="/update_status/{{ task.id }}">
+                    <select name="status" onchange="this.form.submit()">
+                        <option value="Pending" {% if task.status == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Overdue" {% if task.status == 'Overdue' %}selected{% endif %}>Overdue</option>
+                        <option value="Complete" {% if task.status == 'Complete' %}selected{% endif %}>Complete</option>
+                    </select>
+                </form>
+            </td>
+            <td>{{ task.department }}</td>
+            <td>{{ task.repeat }}</td>
+            <td>
+                <form method="POST" action="/archive_task/{{ task.id }}">
+                    <input type="submit" value="Archive">
+                </form>
+            </td>
+            <td>
+                <form method="GET" action="/edit_task/{{ task.id }}">
+                    <input type="submit" value="Edit">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <button onclick="togglePerformanceModal()">Check Performance</button>
+
+    <div id="performanceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="togglePerformanceModal()">&times;</span>
+            <form action="/update_performance" method="POST">
+                {% for department in departments %}
+                <label for="{{ department }}">{{ department }}:</label>
+                <select name="{{ department }}">
+                    {% for performance in performances %}
+                    <option value="{{ performance }}" {% if performance_data[department] == performance %}selected{% endif %}>{{ performance }}</option>
+                    {% endfor %}
+                </select><br>
+                {% endfor %}
+                <input type="submit" value="Update Performance Data">
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Task Button -->
+    <button onclick="toggleModal()">Add Task</button>
+
+    <!-- Add Task Modal -->
+    <div id="addTaskModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="toggleModal()">&times;</span>
+            <form method="POST" action="/">
+                <label for="name">Name:</label>
+                <select name="name">
+                    {% for name in names %}
+                    <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                </select><br>
+    
+                <label for="deadline">Deadline:</label>
+                <input type="date" name="deadline"><br>
+    
+                <label for="description">Description:</label>
+                <textarea name="description"></textarea><br>
+    
+                <label for="priority">Priority:</label>
+                <select name="priority">
+                    {% for priority in priorities %}
+                    <option value="{{ priority }}">{{ priority }}</option>
+                    {% endfor %}
+                </select><br>
+    
+                <label for="status">Status:</label>
+                <select name="status">
+                    {% for status in statuses %}
+                    <option value="{{ status }}">{{ status }}</option>
+                    {% endfor %}
+                </select><br>
+    
+                <label for="department">Department:</label>
+                <select name="department">
+                    {% for department in departments %}
+                    <option value="{{ department }}">{{ department }}</option>
+                    {% endfor %}
+                </select><br>
+                
+                <label for="repeat">Repeat:</label>
+                <select name="repeat">
+                    <option value="None">None</option>
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
+                </select><br>
+    
+                <input type="submit" value="Add Task">
+            </form>
+        </div>
+    </div>
+
+    <a href="{{ url_for('archive_all_tasks') }}">Archived Tasks</a>
+
+    <script>
+        // JavaScript to toggle the add task modal
+        function toggleModal() {
+            var modal = document.getElementById("addTaskModal");
+            modal.style.display = (modal.style.display === "none") ? "block" : "none";
+        }
+        // Performance Modal
+        function togglePerformanceModal() {
+            var modal = document.getElementById("performanceModal");
+            modal.style.display = (modal.style.display === "block") ? "none" : "block";
+        }
+    </script>
+</body>
+</html>

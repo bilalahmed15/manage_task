@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Task</title>
+    <style>
+        /* Styles from the previous code */
+        body {
+            background-color: #f2eaff;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            color: #6b238e;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #6b238e;
+        }
+
+        select,
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background-color: #6b238e;
+            color: #fff;
+            font-size: 14px;
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="date"]::-webkit-inner-spin-button {
+            display: none;
+        }
+
+        input[type="submit"] {
+            background-color: #6b238e;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #4b0e60;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit Task</h1>
+    <form method="POST" action="{{ url_for('edit_task', task_id=task.id) }}">
+        <label for="name">Name:</label>
+        <select name="name">
+            {% for name in names %}
+            <option value="{{ name }}" {% if task.name == name %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="deadline">Deadline:</label>
+        <input type="date" name="deadline" value="{{ task.deadline }}">
+
+        <label for="description">Description:</label>
+        <input type="text" name="description" value="{{ task.description }}">
+
+        <label for="priority">Priority:</label>
+        <select name="priority">
+            {% for priority in priorities %}
+            <option value="{{ priority }}" {% if task.priority == priority %}selected{% endif %}>{{ priority }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="status">Status:</label>
+        <select name="status">
+            {% for status in statuses %}
+            <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="department">Department:</label>
+        <select name="department">
+            {% for department in departments %}
+            <option value="{{ department }}" {% if task.department == department %}selected{% endif %}>{{ department }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="daily">Daily:</label>
+        <input type="checkbox" name="daily" {% if task.daily %}checked{% endif %}>
+
+        <input type="submit" value="Update Task">
+    </form>
+</body>
+</html>
